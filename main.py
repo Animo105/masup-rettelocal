@@ -5,6 +5,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+FILE_NAME = "data.csv"
 
 def getItems(driver, itemsArray) :
     try :
@@ -55,11 +59,16 @@ def getItems(driver, itemsArray) :
     finally :
         return temp_item_list
 
-
-
 #######################################################################
 ###                            MAIN CODE                            ###
 #######################################################################
+path = os.path.join(SCRIPT_DIR, FILE_NAME)
+
+if os.path.exists(path):
+    os.remove(path)
+
+with open(path, 'w') as f:
+    f.write("Name; company; price; price_to_weight; product_type; image_link\n")
 
 item_list = list()
 
@@ -101,6 +110,15 @@ for k in page_list :
         for i in temp_item_list :
             item_list.append(i)
 
+        with open(path, 'a', encoding="utf-8") as f:
+            for i in temp_item_list:
+                if isinstance(i, Item):
+                    try:
+                        f.write(f"{i.name};{i.company};{i.price};{i.price_to_weight};{i.product_type};{i.image_link}\n")
+                    except Exception as e:
+                        print("Error while writing item: ", i.name)
+                        print(e, "\n")
+
         if (y < nb_pages - 1) :
             # Ouvre vert la prochaine page
             try :
@@ -110,5 +128,6 @@ for k in page_list :
                 pass
             driver.find_element(By.CSS_SELECTOR, "a[aria-label='Page suivante']").click()
             sleep(5)
+
 print(len(item_list))
 driver.quit()
