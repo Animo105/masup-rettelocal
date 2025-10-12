@@ -12,40 +12,26 @@ FILE_NAME = "data.csv"
 
 def getItems(driver, itemsArray) :
     try :
-        for i in range(len(items)) :
+        for i in itemsArray :
             # Retourne le nom de l'item
-            item_name = itemsArray[i].find_element(By.CSS_SELECTOR, "h3[data-testid='product-title']").text
+            item_name = i.find_element(By.CSS_SELECTOR, "div[class='head__title']").text
 
             try :
-                item_company = itemsArray[i].find_element(By.CSS_SELECTOR, "p[data-testid='product-brand']").text
+                item_company = i.find_element(By.CSS_SELECTOR, "span[class='head__brand']").text
             except :
                 item_company = ""
             
-            item_p_to_w = itemsArray[i].find_element(By.CSS_SELECTOR, "p[data-testid='product-package-size'").text
+            item_p_to_w = i.find_element(By.CSS_SELECTOR, "div[class='pricing__secondary-price']").text
 
-            item_pt = driver.find_element(By.CSS_SELECTOR, "h1[data-testid='heading']").text
+            item_pt = driver.find_element(By.CSS_SELECTOR, "div[class='grid--container category-shop-title']").find_element(By.TAG_NAME, "h1").text
 
 
-            item_im_li = itemsArray[i].find_element(By.TAG_NAME, "img").get_attribute("src")
+            item_im_li = i.find_element(By.CSS_SELECTOR, "picture[class='defaultable-picture']").find_element(By.TAG_NAME, "img").get_attribute("src")
 
             # Retourne l'élément contenant les informations sur le prix du produit
-            temp_price_tiles = itemsArray[i].find_element(By.CSS_SELECTOR, "div[data-testid='price-product-tile']").find_elements(By.XPATH, "./*")
-            # Trouve le prix de l'item et ajuste le contenu du String retourné pour donner un float
-            item_price = ""
-            # Si le div qui contient le prix n'a qu'un élément enfant
-            if len(temp_price_tiles) == 1 :
-                # On va chercher directement le contenu de l'élément
-                item_price = temp_price_tiles[0].text
-            else :
-                try :
-                    # On va chercher le contenu du premier élément, qui aura alors d'autres éléments à l'intérieur
-                    item_price = (temp_price_tiles[0].find_element(By.CSS_SELECTOR, "span[data-testid='sale-price']").text)
-                except :
-                    item_price = (temp_price_tiles[0].find_element(By.CSS_SELECTOR, "span[data-testid='regular-price']").text)
-            # On enlève la mention du mot 'environ' (lorsque l'item est vendu au poid) et le signe '$'
-            # On transforme 'item_price' en float pour pouvoir le mettre dans le constructeur de la classe 'Item'
-            item_price = item_price.replace("sale","").replace("environ", "").replace("$", "").replace(",", ".").strip()
-            item_price = float(item_price[:4])
+            item_price = i.find_element(By.CLASS_NAME, "price-update").text
+            item_price = item_price.replace("$", "").replace(",", ".").replace("/", "").strip()
+            item_price = float(item_price)
 
             # Ajoute les informations récupérés à partir du site web dans la liste des items
             temp_item_list.append(Item(na=item_name, co=item_company, pw=item_p_to_w, li=item_im_li, pt=item_pt, pr=item_price))
@@ -76,12 +62,14 @@ driver = webdriver.Firefox()
 
 page_list = getAllPages(driver)
 print(len(page_list))
+for i in page_list :
+    print(str(i) + "\n")
 
 for k in page_list :
     driver.get(k)
     nb_pages = 0
     try :
-        nb_pages = driver.find_element(By.CSS_SELECTOR, "div[data-testid='pagination']").find_elements(By.TAG_NAME, "a")
+        nb_pages = driver.find_element(By.CSS_SELECTOR, "div[class='ppn--pagination']").find_elements(By.TAG_NAME, "a")
         nb_pages = int(nb_pages[len(nb_pages) - 2].text)
     except :
         nb_pages = 1
@@ -90,8 +78,9 @@ for k in page_list :
     for y in range(nb_pages) :
         temp_item_list = list()
         
-        items_section = driver.find_elements(By.CSS_SELECTOR, "div[data-testid='product-grid-component']")
-        items = items_section[1].find_elements(By.CSS_SELECTOR, ".chakra-linkbox.css-yxqevf")
+        items_section = driver.find_element(By.CSS_SELECTOR, "div[class='products-search--grid searchOnlineResults']")
+        items = items_section.find_elements(By.CSS_SELECTOR, ".tile-product")
+        print(len(items))
         
         is_loaded = False
 
@@ -121,13 +110,8 @@ for k in page_list :
 
         if (y < nb_pages - 1) :
             # Ouvre vert la prochaine page
-            try :
-                driver.find_element(By.CSS_SELECTOR, "#onetrust-accept-btn-handler").click()
-                sleep(2)
-            except :
-                pass
-            driver.find_element(By.CSS_SELECTOR, "a[aria-label='Page suivante']").click()
-            sleep(5)
+            driver.get(k + "-page-" + str(y + 2))
+            sleep(3)
 
 print(len(item_list))
 driver.quit()

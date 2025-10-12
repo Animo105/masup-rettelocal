@@ -23,5 +23,6 @@ def getAllPages(driver) -> list :
     sleep(1)
     for i in all_li :
         i.find_element(By.CSS_SELECTOR, "button").click()
+        sleep(0.2)
         pages.append(driver.find_element(By.CSS_SELECTOR, ".aisles--subNav--lev2").find_element(By.TAG_NAME, "a").get_attribute("href"))
     return pages
